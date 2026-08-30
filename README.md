@@ -21,6 +21,27 @@ A lightweight, no-nonsense iOS Application Archive (.ipa) toolkit built with Pyt
 ## Installation & Setup
 
 1. Clone the repo:
-   ```bash
-   git clone [https://github.com/raed-alzahrani/IPAStudio.git](https://github.com/raed-alzahrani/IPAStudio.git)
-   cd IPAStudio
+    git clone [https://github.com/raed-alzahrani/IPAStudio.git](https://github.com/raed-alzahrani/IPAStudio.git)
+    cd IPAStudio
+
+2. Install dependencies:
+    pip install -r requirements.txt
+
+3. Run the app:
+    python main.pyw
+    (Or just double-click main.pyw on Windows).
+
+---
+
+## Requirements
+
+- Python 3.8+
+- customtkinter >= 5.2.0
+- pillow >= 10.0.0
+- tkinterdnd2 >= 0.3.0
+
+---
+
+## License
+
+Licensed under the MIT License (LICENSE).
