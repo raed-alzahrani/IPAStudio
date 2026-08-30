@@ -7,7 +7,7 @@ A lightweight, no-nonsense iOS Application Archive (.ipa) toolkit built with Pyt
 ## Features
 
 - **Metadata & Version Spoofing:** Change CFBundleShortVersionString, CFBundleVersion, App Display Name, or Bundle ID on the fly.
-- **Unity Asset Version Patcher:** Scans and patches hardcoded version strings embedded inside Unity data files.
+- **Parallel Unity Asset Version Patcher:** Multi-threaded scanning and patching of hardcoded version strings inside Unity data files.
 - **Dynamic Library Injector:** Inject raw .dylib files or extract and pack .deb tweaks straight into the Frameworks/ folder.
 - **Signature Cleaner:** Strips old _CodeSignature folders and expired provisioning profiles for smooth sideloading via ESign, Scarlet, TrollStore, etc.
 - **Drag & Drop:** Drop your .ipa, .dylib, or .deb files anywhere on the app window.
@@ -21,27 +21,6 @@ A lightweight, no-nonsense iOS Application Archive (.ipa) toolkit built with Pyt
 ## Installation & Setup
 
 1. Clone the repo:
-   git clone https://github.com/raed-alzahrani/IPAStudio.git
+   ```bash
+   git clone [https://github.com/raed-alzahrani/IPAStudio.git](https://github.com/raed-alzahrani/IPAStudio.git)
    cd IPAStudio
-
-2. Install dependencies:
-   pip install -r requirements.txt
-
-3. Run the app:
-   python main.pyw
-   (Or just double-click main.pyw on Windows).
-
----
-
-## Requirements
-
-- Python 3.8+
-- customtkinter >= 5.2.0
-- pillow >= 10.0.0
-- tkinterdnd2 >= 0.3.0
-
----
-
-## License
-
-Licensed under the MIT License (LICENSE).
