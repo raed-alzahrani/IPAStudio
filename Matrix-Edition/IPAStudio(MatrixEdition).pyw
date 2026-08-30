@@ -6,7 +6,7 @@ import zipfile
 import threading
 import plistlib
 import subprocess
-import struct
+from concurrent.futures import ThreadPoolExecutor
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
@@ -754,27 +754,33 @@ class MatrixIPAStudio(ctk.CTk, TkinterDnD.DnDWrapper):
 
             self.progress.set(0.6)
 
-            # 1. Patch Unity Assets
+            # 1. Parallel Unity String Replacement
             if self.unity_var.get() and new_ver and new_build:
                 data_dir = os.path.join(self.app_dir, "Data")
                 if os.path.exists(data_dir):
-                    self.log("[EXEC] Patching Unity binary assets strings...", "ghost")
+                    self.log("[EXEC] Patching Unity binary assets...", "ghost")
+                    unity_files = []
                     for root, _, files in os.walk(data_dir):
                         for file in files:
-                            fp = os.path.join(root, file)
-                            try:
-                                with open(fp, "rb") as bf: content = bf.read()
-                                mod = False
-                                if curr_ver and curr_ver.encode() in content:
-                                    content = content.replace(curr_ver.encode(), new_ver.encode())
-                                    mod = True
-                                if curr_build and curr_build.encode() in content:
-                                    content = content.replace(curr_build.encode(), new_build.encode())
-                                    mod = True
-                                if mod:
-                                    with open(fp, "wb") as bf: bf.write(content)
-                                    self.log(f"  └─► [PATCHED] Asset: {file}", "primary")
-                            except Exception: continue
+                            unity_files.append(os.path.join(root, file))
+
+                    def patch_file(fp):
+                        try:
+                            with open(fp, "rb") as bf: content = bf.read()
+                            mod = False
+                            if curr_ver and curr_ver.encode() in content:
+                                content = content.replace(curr_ver.encode(), new_ver.encode())
+                                mod = True
+                            if curr_build and curr_build.encode() in content:
+                                content = content.replace(curr_build.encode(), new_build.encode())
+                                mod = True
+                            if mod:
+                                with open(fp, "wb") as bf: bf.write(content)
+                                self.log(f"  └─► [PATCHED] Asset: {os.path.basename(fp)}", "primary")
+                        except Exception: pass
+
+                    with ThreadPoolExecutor(max_workers=8) as ex:
+                        ex.map(patch_file, unity_files)
 
             # 2. Clean Signatures & Provisioning Profiles
             if self.sig_var.get():
