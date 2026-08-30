@@ -6,6 +6,7 @@ import zipfile
 import threading
 import plistlib
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
@@ -187,8 +188,8 @@ class CodeUpdateDialog(ctk.CTkToplevel):
         actions_box = ctk.CTkFrame(header_box, fg_color="transparent")
         actions_box.pack(side="right")
 
-        ctk.CTkButton(actions_box, text="📋 Copy Code", width=120, height=28, font=("Segoe UI", 11, "bold"), fg_color="#1e293b", hover_color="#334155", text_color="#ffffff", command=self.copy_code).pack(side="left", padx=(0, 6))
-        ctk.CTkButton(actions_box, text="📥 Paste Code", width=120, height=28, font=("Segoe UI", 11, "bold"), fg_color=self.palette["btn_bg"], hover_color=self.palette["hover"], text_color="#ffffff", command=self.paste_code).pack(side="left")
+        ctk.CTkButton(actions_box, text="Copy Code", width=120, height=28, font=("Segoe UI", 11, "bold"), fg_color="#1e293b", hover_color="#334155", text_color="#ffffff", command=self.copy_code).pack(side="left", padx=(0, 6))
+        ctk.CTkButton(actions_box, text="Paste Code", width=120, height=28, font=("Segoe UI", 11, "bold"), fg_color=self.palette["btn_bg"], hover_color=self.palette["hover"], text_color="#ffffff", command=self.paste_code).pack(side="left")
 
         self.editor = ctk.CTkTextbox(self, font=("Consolas", 11), fg_color=inner_bg, border_color=pri, border_width=1, text_color=txt_main, undo=True)
         self.editor.pack(fill="both", expand=True, padx=20, pady=6)
@@ -238,7 +239,6 @@ class CodeUpdateDialog(ctk.CTkToplevel):
 class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
     def __init__(self):
         super().__init__()
-        # Correctly initialize DnD Wrapper for CustomTkinter
         self.TkdndVersion = TkinterDnD._require(self)
         
         self.title("IPA Studio")
@@ -266,7 +266,6 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.injected_dylib_path = ""
         self.temp_dir = os.path.join(os.environ.get("TEMP", BASE_DIR), "_ipa_workspace")
         self.app_dir = ""
-        self.binary_path = ""
         self.plist_path = ""
         self.plist_data = {}
 
@@ -275,7 +274,6 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.apply_theme(self.current_theme)
         self.apply_font(self.current_font)
 
-        # Register Drag & Drop on the window
         try:
             self.drop_target_register(DND_FILES)
             self.dnd_bind('<<Drop>>', self.on_global_drop)
@@ -338,7 +336,6 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
             self.text_muted = "#64748b"
 
     def setup_ui(self):
-        # Header
         self.header = ctk.CTkFrame(self, fg_color=self.card_bg, corner_radius=10, border_width=1, border_color=self.panel_border)
         self.header.pack(fill="x", padx=10, pady=(8, 3))
 
@@ -371,7 +368,6 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.btn_mode_toggle = ctk.CTkButton(ctrls, text="Dark" if self.appearance_mode == "Dark" else "Light", width=55, height=26, fg_color="#1e293b", hover_color="#334155", command=self.toggle_appearance)
         self.btn_mode_toggle.pack(side="left", padx=2)
 
-        # File Selection Bar
         self.file_frame = ctk.CTkFrame(self, fg_color=self.card_bg, corner_radius=8, border_width=1, border_color=self.panel_border)
         self.file_frame.pack(fill="x", padx=10, pady=3)
 
@@ -384,12 +380,11 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.btn_browse = ctk.CTkButton(self.file_frame, text="Browse", width=80, height=28, fg_color="#1e293b", hover_color="#334155", command=self.choose_ipa)
         self.btn_browse.pack(side="right", padx=(4, 8), pady=5)
 
-        # Config Area
         self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
         self.content_frame.pack(fill="x", padx=10, pady=3)
         self.content_frame.grid_columnconfigure((0, 1), weight=1)
 
-        # Left: Metadata
+        # Left Card
         self.meta_card = ctk.CTkFrame(self.content_frame, fg_color=self.card_bg, corner_radius=8, border_width=1, border_color=self.panel_border)
         self.meta_card.grid(row=0, column=0, sticky="nsew", padx=(0, 3), pady=0)
 
@@ -419,7 +414,7 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.ent_bundle_id = ctk.CTkEntry(self.meta_card, height=26, placeholder_text="Bundle ID (Duplicate App)", fg_color=self.inner_bg, border_color=self.panel_border)
         self.ent_bundle_id.pack(fill="x", padx=8, pady=(2, 6))
 
-        # Right: Injection & Options
+        # Right Card
         self.dylib_card = ctk.CTkFrame(self.content_frame, fg_color=self.card_bg, corner_radius=8, border_width=1, border_color=self.panel_border)
         self.dylib_card.grid(row=0, column=1, sticky="nsew", padx=(3, 0), pady=0)
 
@@ -453,7 +448,6 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.chk_http = ctk.CTkCheckBox(opts_grid, text="Allow HTTP Traffic", variable=self.http_var, command=self.save_config)
         self.chk_http.grid(row=1, column=1, sticky="w", pady=3)
 
-        # Log Window
         self.progress_bar = ctk.CTkProgressBar(self, height=6, corner_radius=3)
         self.progress_bar.set(0)
         self.progress_bar.pack(fill="x", padx=10, pady=(4, 2))
@@ -461,7 +455,6 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.log_view = ctk.CTkTextbox(self, height=120, corner_radius=6, fg_color=self.inner_bg, border_width=1, border_color=self.panel_border, text_color=self.text_main)
         self.log_view.pack(fill="both", expand=True, padx=10, pady=3)
 
-        # Footer
         bottom_bar = ctk.CTkFrame(self, fg_color="transparent")
         bottom_bar.pack(fill="x", padx=10, pady=(2, 8))
 
@@ -612,7 +605,8 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
         self.progress_bar.set(0.2)
 
         if os.path.exists(self.temp_dir):
-            shutil.rmtree(self.temp_dir)
+            try: shutil.rmtree(self.temp_dir)
+            except Exception: pass
         os.makedirs(self.temp_dir, exist_ok=True)
 
         try:
@@ -701,27 +695,33 @@ class IPAToolkitApp(ctk.CTk, TkinterDnD.DnDWrapper):
 
             self.progress_bar.set(0.6)
 
-            # 1. Patch Unity Strings
+            # 1. Parallel Unity String Replacement
             if self.unity_var.get() and new_ver and new_build:
                 data_dir = os.path.join(self.app_dir, "Data")
                 if os.path.exists(data_dir):
                     self.log("Patching Unity binary strings...")
+                    unity_files = []
                     for root, _, files in os.walk(data_dir):
                         for file in files:
-                            fp = os.path.join(root, file)
-                            try:
-                                with open(fp, "rb") as bf: content = bf.read()
-                                mod = False
-                                if curr_ver and curr_ver.encode() in content:
-                                    content = content.replace(curr_ver.encode(), new_ver.encode())
-                                    mod = True
-                                if curr_build and curr_build.encode() in content:
-                                    content = content.replace(curr_build.encode(), new_build.encode())
-                                    mod = True
-                                if mod:
-                                    with open(fp, "wb") as bf: bf.write(content)
-                                    self.log(f"Patched: {file}")
-                            except Exception: continue
+                            unity_files.append(os.path.join(root, file))
+
+                    def patch_file(fp):
+                        try:
+                            with open(fp, "rb") as bf: content = bf.read()
+                            mod = False
+                            if curr_ver and curr_ver.encode() in content:
+                                content = content.replace(curr_ver.encode(), new_ver.encode())
+                                mod = True
+                            if curr_build and curr_build.encode() in content:
+                                content = content.replace(curr_build.encode(), new_build.encode())
+                                mod = True
+                            if mod:
+                                with open(fp, "wb") as bf: bf.write(content)
+                                self.log(f"Patched: {os.path.basename(fp)}")
+                        except Exception: pass
+
+                    with ThreadPoolExecutor(max_workers=8) as ex:
+                        ex.map(patch_file, unity_files)
 
             # 2. Clean Signatures & MobileProvision
             if self.sig_var.get():
